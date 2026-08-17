@@ -22,3 +22,6 @@ German_Electricity_Uncertainity.executed.ipynb
 # --- Optuna / misc caches ---
 *.log
 .optuna/
+
+# Local helper notebook (contains absolute paths)
+generate_index.ipynb
