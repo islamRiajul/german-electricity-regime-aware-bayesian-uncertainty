@@ -22,29 +22,50 @@ from sklearn.feature_selection import (
 )
 import plotly.io as pio
 pio.renderers.default = "iframe"
-# ── Output location (Kaggle input mounts are READ-ONLY) ─────────────────────
+# -- Paths -------------------------------------------------------------------
+# One writable working directory holds every generated file (.pkl / .npy /
+# .json and the Plotly .html dashboards), because this pipeline reads and
+# writes through the same DATA_DIR / DOCS_DIR names. Read-only sources are
+# linked into it, so os.path.join(DATA_DIR, ...) resolves for BOTH.
+#
+#   Kaggle : /kaggle/working, with the attached datasets linked in
+#   local  : $EPF_OUT, else <repo>/outputs, with data/ files/ figures/ src/ linked in
 import sys
+
 ON_KAGGLE = os.path.isdir('/kaggle/input')
+
+def _repo_root():
+    here = os.path.abspath(os.getcwd())
+    while True:
+        if os.path.isdir(os.path.join(here, '.git')):
+            return here
+        up = os.path.dirname(here)
+        if up == here:
+            return os.path.abspath(os.getcwd())
+        here = up
+
 if ON_KAGGLE:
-    DOCS_DIR = '/kaggle/working'
-    # Kaggle's mount layout has changed over time — attached datasets appear at
-    # /kaggle/input/<slug> on older images and at
-    # /kaggle/input/datasets/<owner>/<slug> on current ones — so discover the
-    # directories that actually hold files instead of hardcoding a path.
-    KAGGLE_INPUTS = sorted({r for r, _sub, f in os.walk('/kaggle/input') if f})
-    # Link the read-only inputs into the writable dir, so that every existing
-    # os.path.join(DATA_DIR | DOCS_DIR, ...) works for BOTH reads and writes.
-    for _d in KAGGLE_INPUTS:
-        if _d not in sys.path:
-            sys.path.append(_d)
-        for _f in os.listdir(_d):
-            _s, _dst = os.path.join(_d, _f), os.path.join(DOCS_DIR, _f)
-            if os.path.isfile(_s) and not os.path.exists(_dst):
-                os.symlink(_s, _dst)
-    print('Kaggle inputs discovered:', KAGGLE_INPUTS)
+    WORK_DIR = '/kaggle/working'
+    # Kaggle's mount layout has changed over time: attached datasets appear at
+    # /kaggle/input/<slug> on older images and /kaggle/input/datasets/<owner>/<slug>
+    # on current ones, so discover the dirs that hold files instead of guessing.
+    SOURCE_DIRS = sorted({r for r, _sub, f in os.walk('/kaggle/input') if f})
 else:
-    KAGGLE_INPUTS = []
-    DOCS_DIR = "/Users/islamriajul/Documents"
+    _ROOT = _repo_root()
+    WORK_DIR = os.environ.get('EPF_OUT') or os.path.join(_ROOT, 'outputs')
+    SOURCE_DIRS = [os.path.join(_ROOT, d) for d in ('data', 'files', 'figures', 'src')]
+    SOURCE_DIRS = [d for d in SOURCE_DIRS if os.path.isdir(d)]
+
+os.makedirs(WORK_DIR, exist_ok=True)
+for _d in SOURCE_DIRS:
+    if _d not in sys.path:
+        sys.path.append(_d)
+    for _f in os.listdir(_d):
+        _s, _dst = os.path.join(_d, _f), os.path.join(WORK_DIR, _f)
+        if os.path.isfile(_s) and not os.path.exists(_dst):
+            os.symlink(_s, _dst)
+
+DATA_DIR = DOCS_DIR = WORK_DIR
 from german_epf_research import (
     BSSM,
     DDNN,
@@ -73,7 +94,7 @@ def _pick_renderer():
 pio.renderers.default = _pick_renderer()
 
 import sys
-for _p in KAGGLE_INPUTS + ['.', '/Users/islamriajul/Documents']:
+for _p in SOURCE_DIRS + ['.']:
     if _p not in sys.path:
         sys.path.append(_p)
 
@@ -86,21 +107,15 @@ from german_epf_research import (
 warnings.filterwarnings('ignore')
 np.random.seed(42)
 
+# -- Data location -----------------------------------------------------------
 def data_dir():
-    candidates = [
-        '/kaggle/working' if ON_KAGGLE else 'data',
-        'data',
-        '/Users/islamriajul/Documents',
-        '.',
-    ]
-    for d in candidates:
-        if os.path.isdir(d):
-            return d
-    return '.'
+    """Everything lives in the one working directory (see Paths above)."""
+    return DATA_DIR
 
-DATA_DIR = data_dir()
 def dpath(fname):
+    """Build a path to a data file inside the working directory."""
     p = os.path.join(DATA_DIR, fname)
     return p if os.path.exists(p) else fname
 
-print(f'Setup complete. Data directory: {DATA_DIR}')
+print(f'Setup complete. Working directory: {WORK_DIR}')
+print(f'  sources linked in: {SOURCE_DIRS}')

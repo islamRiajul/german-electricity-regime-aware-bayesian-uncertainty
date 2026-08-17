@@ -25,3 +25,6 @@ German_Electricity_Uncertainity.executed.ipynb
 
 # Local helper notebook (contains absolute paths)
 generate_index.ipynb
+
+# Generated working directory
+outputs/

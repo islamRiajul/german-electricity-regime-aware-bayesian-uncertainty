@@ -1049,7 +1049,7 @@ def print_results_table(results: dict):
     print("═"*80)
 
 
-def plot_results_plotly(results: dict, y_test: np.ndarray, save_path: str = "/Users/islamriajul/Documents/epf_results_plotly.html"):
+def plot_results_plotly(results: dict, y_test: np.ndarray, save_path: str = "epf_results_plotly.html"):
     print("\nGenerating interactive Plotly dashboard...", end=" ")
     n_show = min(720, len(y_test))
     models = list(results.keys())
@@ -1144,7 +1144,7 @@ def main():
     print("█"*65)
 
     df, candidate_features = load_real_smard(
-        '/Users/islamriajul/Documents/Day-ahead_prices_202001010000_202605010000_Hour.csv'
+        'Day-ahead_prices_202001010000_202605010000_Hour.csv'
     )
     
     # Chronological Split via explicit dates
@@ -1277,7 +1277,7 @@ def main():
     # ── 11. Plotly Visualizations ─────────────────────────────────────────────
     plot_results_plotly(
         results, y_te,
-        save_path="/Users/islamriajul/Documents/epf_results_plotly.html"
+        save_path="epf_results_plotly.html"
     )
 
     print("\n" + "█"*65)
