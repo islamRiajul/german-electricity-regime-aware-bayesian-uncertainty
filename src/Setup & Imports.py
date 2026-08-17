@@ -25,24 +25,25 @@ pio.renderers.default = "iframe"
 # ── Output location (Kaggle input mounts are READ-ONLY) ─────────────────────
 import sys
 ON_KAGGLE = os.path.isdir('/kaggle/input')
-KAGGLE_INPUTS = [
-    '/kaggle/input/german-electricity-dataset',   # raw SMARD CSV
-    '/kaggle/input/german-epf-research',          # german_epf_research.py
-]
 if ON_KAGGLE:
     DOCS_DIR = '/kaggle/working'
+    # Kaggle's mount layout has changed over time — attached datasets appear at
+    # /kaggle/input/<slug> on older images and at
+    # /kaggle/input/datasets/<owner>/<slug> on current ones — so discover the
+    # directories that actually hold files instead of hardcoding a path.
+    KAGGLE_INPUTS = sorted({r for r, _sub, f in os.walk('/kaggle/input') if f})
     # Link the read-only inputs into the writable dir, so that every existing
     # os.path.join(DATA_DIR | DOCS_DIR, ...) works for BOTH reads and writes.
     for _d in KAGGLE_INPUTS:
-        if not os.path.isdir(_d):
-            continue
         if _d not in sys.path:
             sys.path.append(_d)
         for _f in os.listdir(_d):
-            _dst = os.path.join(DOCS_DIR, _f)
-            if not os.path.exists(_dst):
-                os.symlink(os.path.join(_d, _f), _dst)
+            _s, _dst = os.path.join(_d, _f), os.path.join(DOCS_DIR, _f)
+            if os.path.isfile(_s) and not os.path.exists(_dst):
+                os.symlink(_s, _dst)
+    print('Kaggle inputs discovered:', KAGGLE_INPUTS)
 else:
+    KAGGLE_INPUTS = []
     DOCS_DIR = "/Users/islamriajul/Documents"
 from german_epf_research import (
     BSSM,
