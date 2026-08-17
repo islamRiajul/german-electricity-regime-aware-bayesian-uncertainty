@@ -16,9 +16,11 @@ breaks one or the other.
 | Kaggle | `/kaggle/working` | every attached dataset under `/kaggle/input` |
 | Local | `$EPF_OUT`, else `<repo>/outputs` | `data/`, `files/`, `figures/`, `src/` |
 
-Read-only sources are **symlinked into** `WORK_DIR` at setup, so
-`os.path.join(DATA_DIR, "data_part2.pkl")` resolves whether that file is a
-committed input or something the run just produced. `outputs/` is gitignored.
+Only the true read-only inputs — the raw `.csv` and the `.py` modules — are
+symlinked into `WORK_DIR`. Generated artifacts (`.pkl`, `.npy`, `.json`,
+`.html`) are deliberately **not** linked: a write would follow the symlink and
+overwrite the committed copy in `data/` or `figures/`. A local run therefore
+regenerates its own intermediates inside `outputs/`, which is gitignored.
 
 On Kaggle the mount layout is discovered by walking `/kaggle/input`, because
 attached datasets appear at `/kaggle/input/<slug>` on older images and at
