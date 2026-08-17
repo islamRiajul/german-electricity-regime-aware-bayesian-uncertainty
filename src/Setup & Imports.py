@@ -22,7 +22,28 @@ from sklearn.feature_selection import (
 )
 import plotly.io as pio
 pio.renderers.default = "iframe"
-DOCS_DIR = "/Users/islamriajul/Documents"
+# ── Output location (Kaggle input mounts are READ-ONLY) ─────────────────────
+import sys
+ON_KAGGLE = os.path.isdir('/kaggle/input')
+KAGGLE_INPUTS = [
+    '/kaggle/input/german-electricity-dataset',   # raw SMARD CSV
+    '/kaggle/input/german-epf-research',          # german_epf_research.py
+]
+if ON_KAGGLE:
+    DOCS_DIR = '/kaggle/working'
+    # Link the read-only inputs into the writable dir, so that every existing
+    # os.path.join(DATA_DIR | DOCS_DIR, ...) works for BOTH reads and writes.
+    for _d in KAGGLE_INPUTS:
+        if not os.path.isdir(_d):
+            continue
+        if _d not in sys.path:
+            sys.path.append(_d)
+        for _f in os.listdir(_d):
+            _dst = os.path.join(DOCS_DIR, _f)
+            if not os.path.exists(_dst):
+                os.symlink(os.path.join(_d, _f), _dst)
+else:
+    DOCS_DIR = "/Users/islamriajul/Documents"
 from german_epf_research import (
     BSSM,
     DDNN,
@@ -51,7 +72,7 @@ def _pick_renderer():
 pio.renderers.default = _pick_renderer()
 
 import sys
-for _p in ['/kaggle/input/german-electricity-epf', '.', '/Users/islamriajul/Documents']:
+for _p in KAGGLE_INPUTS + ['.', '/Users/islamriajul/Documents']:
     if _p not in sys.path:
         sys.path.append(_p)
 
@@ -66,7 +87,7 @@ np.random.seed(42)
 
 def data_dir():
     candidates = [
-        '/kaggle/input/german-electricity-epf',
+        '/kaggle/working' if ON_KAGGLE else 'data',
         'data',
         '/Users/islamriajul/Documents',
         '.',
