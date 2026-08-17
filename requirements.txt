@@ -1,0 +1,10 @@
+numpy>=1.23
+pandas>=1.5
+scipy>=1.9
+scikit-learn>=1.2
+plotly>=6.1.1
+optuna>=3.3
+nbformat>=5.7
+jupyter
+# Kaleido 1.x requires plotly >= 6.1.1 for static image export (GITHUB_STATIC).
+kaleido>=1.0
